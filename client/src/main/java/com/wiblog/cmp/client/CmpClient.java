@@ -51,16 +51,16 @@ public class CmpClient {
     private void initScheduledTasks() {
         // Heartbeat timer
         scheduler.schedule(
-                new TimedSupervisorTask(
+                new CmpTimerTask(
                         "heartbeat",
                         scheduler,
                         heartbeatExecutor,
-                        renewalIntervalInSecs,
+                        60,
                         TimeUnit.SECONDS,
-                        expBackOffBound,
+                        3,
                         new HeartbeatThread()
                 ),
-                renewalIntervalInSecs, TimeUnit.SECONDS);
+                60, TimeUnit.SECONDS);
     }
 
     /**
@@ -68,5 +68,43 @@ public class CmpClient {
      */
     public void shutdown() {
 
+    }
+
+    /**
+     * 心跳任务
+     */
+    private class HeartbeatThread implements Runnable {
+
+        @Override
+        public void run() {
+            if (renew()) {
+                lastSuccessfulHeartbeatTimestamp = System.currentTimeMillis();
+            }
+        }
+    }
+
+    /**
+     * 心跳请求
+     */
+    boolean renew() {
+        HttpResponse<InstanceInfo> httpResponse;
+        try {
+            httpResponse = eurekaTransport.registrationClient.sendHeartBeat(instanceInfo.getAppName(), instanceInfo.getId(), instanceInfo, null);
+            logger.debug(PREFIX + "{} - Heartbeat status: {}", appPathIdentifier, httpResponse.getStatusCode());
+            if (httpResponse.getStatusCode() == 404) {
+                REREGISTER_COUNTER.increment();
+                logger.info(PREFIX + "{} - Re-registering apps/{}", appPathIdentifier, instanceInfo.getAppName());
+                long timestamp = instanceInfo.setIsDirtyWithTime();
+                boolean success = register();
+                if (success) {
+                    instanceInfo.unsetIsDirty(timestamp);
+                }
+                return success;
+            }
+            return httpResponse.getStatusCode() == 200;
+        } catch (Throwable e) {
+            logger.error(PREFIX + "{} - was unable to send heartbeat!", appPathIdentifier, e);
+            return false;
+        }
     }
 }
