@@ -3,6 +3,10 @@ package com.wiblog.cmp.client;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.wiblog.cmp.client.bean.CmpClientConfig;
 import com.wiblog.cmp.client.bean.CmpInstanceConfig;
+import com.wiblog.cmp.client.bean.InstanceInfo;
+import com.wiblog.cmp.client.common.HttpResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.client.RestTemplate;
 import sun.plugin2.main.server.HeartbeatThread;
 
 import java.util.concurrent.*;
@@ -18,7 +22,14 @@ public class CmpClient {
     private final ThreadPoolExecutor heartbeatExecutor;
     private final ThreadPoolExecutor cacheRefreshExecutor;
 
-    public CmpClient(CmpClientConfig client) {
+    InstanceInfo instanceInfo;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    public CmpClient(ApplicationInfoManager applicationInfoManager, CmpClientConfig client) {
+        //instanceInfo = applicationInfoManager.
+
         scheduler = Executors.newScheduledThreadPool(2,
                 new ThreadFactoryBuilder()
                         .setNameFormat("DiscoveryClient-%d")
@@ -45,6 +56,9 @@ public class CmpClient {
                         .setDaemon(true)
                         .build()
         );
+
+        // 注册
+        register();
 
     }
 
@@ -84,16 +98,34 @@ public class CmpClient {
     }
 
     /**
+     * 客户端注册 rest请求
+     *
+     * @return
+     * @throws Throwable
+     */
+    boolean register() throws Throwable {
+        EurekaHttpResponse<Void> httpResponse;
+        try {
+            httpResponse = eurekaTransport.registrationClient.register(instanceInfo);
+        } catch (Exception e) {
+            throw e;
+        }
+        return httpResponse.getStatusCode() == 204;
+    }
+
+}
+
+    /**
      * 心跳请求
      */
     boolean renew() {
         HttpResponse<InstanceInfo> httpResponse;
+        // 客户端
+        JSONObject jsonObject = restTemplate.postForObject(url, jsonString, JSONObject.class);
         try {
             httpResponse = eurekaTransport.registrationClient.sendHeartBeat(instanceInfo.getAppName(), instanceInfo.getId(), instanceInfo, null);
-            logger.debug(PREFIX + "{} - Heartbeat status: {}", appPathIdentifier, httpResponse.getStatusCode());
             if (httpResponse.getStatusCode() == 404) {
                 REREGISTER_COUNTER.increment();
-                logger.info(PREFIX + "{} - Re-registering apps/{}", appPathIdentifier, instanceInfo.getAppName());
                 long timestamp = instanceInfo.setIsDirtyWithTime();
                 boolean success = register();
                 if (success) {
@@ -103,7 +135,6 @@ public class CmpClient {
             }
             return httpResponse.getStatusCode() == 200;
         } catch (Throwable e) {
-            logger.error(PREFIX + "{} - was unable to send heartbeat!", appPathIdentifier, e);
             return false;
         }
     }

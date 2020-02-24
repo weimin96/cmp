@@ -2,6 +2,7 @@ package com.wiblog.cmp.client;
 
 import com.wiblog.cmp.client.bean.CmpClientConfig;
 import com.wiblog.cmp.client.bean.CmpInstanceConfig;
+import com.wiblog.cmp.client.bean.InstanceInfo;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
@@ -9,6 +10,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.ConfigurableEnvironment;
+
+import java.util.*;
 
 /**
  * @author pwm
@@ -59,7 +62,9 @@ public class CmpClientAutoConfiguration {
     @ConditionalOnMissingBean(value = ApplicationInfoManager.class, search = SearchStrategy.CURRENT)
     public ApplicationInfoManager eurekaApplicationInfoManager(
             CmpInstanceConfig config) {
+        // 构造客户端信息
         InstanceInfo instanceInfo = new InstanceInfoFactory().create(config);
+        // 交给manager管理 用于注册
         return new ApplicationInfoManager(config, instanceInfo);
     }
 
@@ -72,4 +77,6 @@ public class CmpClientAutoConfiguration {
         CmpClient cmpClient = new CmpClient(client);
         return cmpClient;
     }
+
+
 }
