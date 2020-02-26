@@ -1,12 +1,11 @@
-package com.wiblog.cmp.client.bean;
+package com.wiblog.cmp.server.bean;
 
 /**
- * 客户端信息
- *
  * @author pwm
- * @date 2020/2/16
+ * @date 2020/2/26
  */
 public class InstanceInfo {
+
 
     private volatile String instanceId;
 
@@ -48,9 +47,4 @@ public class InstanceInfo {
         this.port = port;
     }
 
-    public InstanceInfo create(CmpInstanceConfig config) {
-        InstanceInfo instanceInfo = new InstanceInfo();
-        instanceInfo.setIpAddr(config.getIpAddress());
-        return instanceInfo;
-    }
 }

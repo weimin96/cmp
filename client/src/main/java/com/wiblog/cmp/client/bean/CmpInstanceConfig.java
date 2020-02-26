@@ -15,4 +15,8 @@ public class CmpInstanceConfig {
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
 }

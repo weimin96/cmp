@@ -1,11 +1,15 @@
 package com.wiblog.cmp.client;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.wiblog.cmp.client.bean.CmpClientConfig;
 import com.wiblog.cmp.client.bean.CmpInstanceConfig;
 import com.wiblog.cmp.client.bean.InstanceInfo;
 import com.wiblog.cmp.client.common.HttpResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import sun.plugin2.main.server.HeartbeatThread;
 
@@ -15,7 +19,10 @@ import java.util.concurrent.*;
  * @author pwm
  * @date 2020/2/1
  */
+@Component
 public class CmpClient {
+
+    public static final Logger log = LoggerFactory.getLogger(CmpClient.class);
 
     private final ScheduledExecutorService scheduler;
 
@@ -27,8 +34,8 @@ public class CmpClient {
     @Autowired
     private RestTemplate restTemplate;
 
-    public CmpClient(ApplicationInfoManager applicationInfoManager, CmpClientConfig client) {
-        //instanceInfo = applicationInfoManager.
+    public CmpClient(InstanceInfo instanceInfo) {
+        this.instanceInfo = instanceInfo;
 
         scheduler = Executors.newScheduledThreadPool(2,
                 new ThreadFactoryBuilder()
@@ -58,7 +65,11 @@ public class CmpClient {
         );
 
         // 注册
-        register();
+        if(register()) {
+
+        }
+
+        initScheduledTasks();
 
     }
 
@@ -91,9 +102,9 @@ public class CmpClient {
 
         @Override
         public void run() {
-            if (renew()) {
+            /*if (renew()) {
                 lastSuccessfulHeartbeatTimestamp = System.currentTimeMillis();
-            }
+            }*/
         }
     }
 
@@ -101,16 +112,17 @@ public class CmpClient {
      * 客户端注册 rest请求
      *
      * @return
-     * @throws Throwable
      */
-    boolean register() throws Throwable {
-        EurekaHttpResponse<Void> httpResponse;
+    private boolean register() {
+        log.info("注册");
+        String data = JSONObject.toJSONString(instanceInfo);
+        JSONObject httpResponse;
         try {
-            httpResponse = eurekaTransport.registrationClient.register(instanceInfo);
-        } catch (Exception e) {
+            httpResponse = restTemplate.postForObject("/app/register",data,JSONObject.class);
+        }catch (Exception e) {
             throw e;
         }
-        return httpResponse.getStatusCode() == 204;
+        return httpResponse != null && "204".equals(String.valueOf(httpResponse.get("code")));
     }
 
 }
@@ -118,7 +130,7 @@ public class CmpClient {
     /**
      * 心跳请求
      */
-    boolean renew() {
+    /*boolean renew() {
         HttpResponse<InstanceInfo> httpResponse;
         // 客户端
         JSONObject jsonObject = restTemplate.postForObject(url, jsonString, JSONObject.class);
@@ -137,5 +149,5 @@ public class CmpClient {
         } catch (Throwable e) {
             return false;
         }
-    }
-}
+    }*/
+
