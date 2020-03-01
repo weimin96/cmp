@@ -3,6 +3,8 @@ package com.wiblog.cmp.client.config;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +19,8 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class HttpClientConfig {
 
+    private static final Logger logger = LoggerFactory.getLogger(HttpClientConfig.class);
+
     /**
      * 让spring管理RestTemplate,参数相关配置
      *
@@ -28,6 +32,7 @@ public class HttpClientConfig {
         // 生成一个RestTemplate实例
         RestTemplate restTemplate = builder.build();
         restTemplate.setRequestFactory(clientHttpRequestFactory());
+        logger.info("初始化restTemplate");
         return restTemplate;
     }
 

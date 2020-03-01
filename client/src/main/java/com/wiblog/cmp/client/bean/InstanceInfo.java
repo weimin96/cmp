@@ -16,6 +16,17 @@ public class InstanceInfo {
 
     private volatile int port;
 
+    private volatile String serviceUrl;
+
+
+    public String getServiceUrl() {
+        return serviceUrl;
+    }
+
+    public void setServiceUrl(String serviceUrl) {
+        this.serviceUrl = serviceUrl;
+    }
+
     public String getInstanceId() {
         return instanceId;
     }
@@ -48,9 +59,14 @@ public class InstanceInfo {
         this.port = port;
     }
 
-    public InstanceInfo create(CmpInstanceConfig config) {
-        InstanceInfo instanceInfo = new InstanceInfo();
-        instanceInfo.setIpAddr(config.getIpAddress());
-        return instanceInfo;
+    @Override
+    public String toString() {
+        return "InstanceInfo{" +
+                "instanceId='" + instanceId + '\'' +
+                ", appName='" + appName + '\'' +
+                ", ipAddr='" + ipAddr + '\'' +
+                ", port=" + port +
+                ", serviceUrl='" + serviceUrl + '\'' +
+                '}';
     }
 }

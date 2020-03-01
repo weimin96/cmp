@@ -1,11 +1,12 @@
 package com.wiblog.cmp.server.bean;
 
 /**
+ * 客户端信息
+ *
  * @author pwm
- * @date 2020/2/26
+ * @date 2020/2/16
  */
 public class InstanceInfo {
-
 
     private volatile String instanceId;
 
@@ -14,6 +15,17 @@ public class InstanceInfo {
     private volatile String ipAddr;
 
     private volatile int port;
+
+    private volatile String serviceUrl;
+
+
+    public String getServiceUrl() {
+        return serviceUrl;
+    }
+
+    public void setServiceUrl(String serviceUrl) {
+        this.serviceUrl = serviceUrl;
+    }
 
     public String getInstanceId() {
         return instanceId;
@@ -47,4 +59,14 @@ public class InstanceInfo {
         this.port = port;
     }
 
+    @Override
+    public String toString() {
+        return "InstanceInfo{" +
+                "instanceId='" + instanceId + '\'' +
+                ", appName='" + appName + '\'' +
+                ", ipAddr='" + ipAddr + '\'' +
+                ", port=" + port +
+                ", serviceUrl='" + serviceUrl + '\'' +
+                '}';
+    }
 }

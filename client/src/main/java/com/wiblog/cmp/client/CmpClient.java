@@ -2,17 +2,15 @@ package com.wiblog.cmp.client;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.wiblog.cmp.client.bean.CmpClientConfig;
-import com.wiblog.cmp.client.bean.CmpInstanceConfig;
 import com.wiblog.cmp.client.bean.InstanceInfo;
 import com.wiblog.cmp.client.common.HttpResponse;
+import com.wiblog.cmp.client.common.StateEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import sun.plugin2.main.server.HeartbeatThread;
 
+import javax.ws.rs.core.Response;
 import java.util.concurrent.*;
 
 /**
@@ -31,12 +29,11 @@ public class CmpClient {
 
     InstanceInfo instanceInfo;
 
-    @Autowired
-    private RestTemplate restTemplate;
+    RestTemplate restTemplate;
 
-    public CmpClient(InstanceInfo instanceInfo) {
+    public CmpClient(InstanceInfo instanceInfo, RestTemplate restTemplate) {
         this.instanceInfo = instanceInfo;
-
+        this.restTemplate = restTemplate;
         scheduler = Executors.newScheduledThreadPool(2,
                 new ThreadFactoryBuilder()
                         .setNameFormat("DiscoveryClient-%d")
@@ -65,7 +62,7 @@ public class CmpClient {
         );
 
         // 注册
-        if(register()) {
+        if (register()) {
 
         }
 
@@ -116,20 +113,20 @@ public class CmpClient {
     private boolean register() {
         log.info("注册");
         String data = JSONObject.toJSONString(instanceInfo);
-        JSONObject httpResponse;
+        Response response = null;
         try {
-            httpResponse = restTemplate.postForObject("/app/register",data,JSONObject.class);
-        }catch (Exception e) {
-            throw e;
+            response = restTemplate.postForObject(instanceInfo.getServiceUrl() + "register", data, Response.class);
+        } catch (Exception e) {
+            log.error("注册异常", e);
         }
-        return httpResponse != null && "204".equals(String.valueOf(httpResponse.get("code")));
+        return response != null && 204 == response.getStatus();
     }
 
 }
 
-    /**
-     * 心跳请求
-     */
+/**
+ * 心跳请求
+ */
     /*boolean renew() {
         HttpResponse<InstanceInfo> httpResponse;
         // 客户端

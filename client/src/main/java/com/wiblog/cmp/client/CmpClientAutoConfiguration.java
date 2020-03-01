@@ -1,17 +1,22 @@
 package com.wiblog.cmp.client;
 
-import com.wiblog.cmp.client.bean.CmpClientConfig;
-import com.wiblog.cmp.client.bean.CmpInstanceConfig;
 import com.wiblog.cmp.client.bean.InstanceInfo;
+import com.wiblog.cmp.client.config.HttpClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.web.client.RestTemplate;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.UUID;
 
 
 /**
@@ -21,10 +26,12 @@ import org.springframework.core.env.ConfigurableEnvironment;
 @Configuration
 @EnableConfigurationProperties
 // 加载默认client配置项
-@ConditionalOnClass(DefaultClientConfig.class)
+//@ConditionalOnClass(DefaultClientConfig.class)
+@AutoConfigureAfter(HttpClientConfig.class)
+@Import(HttpClientConfig.class)
 public class CmpClientAutoConfiguration {
 
-    public static final Logger logger = LoggerFactory.getLogger(CmpClientAutoConfiguration.class);
+    private static final Logger logger = LoggerFactory.getLogger(CmpClientAutoConfiguration.class);
 
     private ConfigurableEnvironment env;
 
@@ -41,39 +48,34 @@ public class CmpClientAutoConfiguration {
     }
 
     /**
-     * 获取配置信息
-     * @return
-     */
-    @Bean
-    @ConditionalOnMissingBean(value = CmpInstanceConfig.class, search = SearchStrategy.CURRENT)
-    public CmpInstanceConfig eurekaInstanceConfigBean(){
-        logger.info("获取客户端连接配置");
-        String ipAddress = getProperty("cmp.instance.ip-address");
-        System.out.println(ipAddress);
-        CmpInstanceConfig instance = new CmpInstanceConfig();
-        instance.setIpAddress(ipAddress);
-        return instance;
-    }
-
-    /*@Bean
-    @ConditionalOnMissingBean(value = CmpClientConfig.class, search = SearchStrategy.CURRENT)
-    public CmpClientConfig eurekaClientConfigBean(ConfigurableEnvironment env) {
-        CmpClientConfig client = new CmpClientConfig();
-        return client;
-    }*/
-
-    /**
      * 获取客户端配置信息
-     * @param config
      * @return
      */
     @Bean
     @ConditionalOnMissingBean(value = InstanceInfo.class, search = SearchStrategy.CURRENT)
-    public InstanceInfo eurekaApplicationInfoManager(
-            CmpInstanceConfig config) {
+    public InstanceInfo eurekaApplicationInfoManager() {
         logger.info("初始化客户端连接信息");
+        // 客户端host
+        String ipAddress;
+        try {
+            ipAddress = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            ipAddress = "unknown";
+        }
+        // 服务端地址
+        String serviceUrl = getProperty("cmp.instance.service-url");
+        // 客户端名称
+        String applicationName = getProperty("spring.application.name");
+        // 客户端端口号
+        int port = Integer.valueOf(env.getProperty("server.port",env.getProperty("port","8080")));
+        InstanceInfo instanceInfo = new InstanceInfo();
+        instanceInfo.setInstanceId(UUID.randomUUID().toString());
+        instanceInfo.setIpAddr(ipAddress);
+        instanceInfo.setServiceUrl(serviceUrl);
+        instanceInfo.setPort(port);
+        instanceInfo.setAppName(applicationName);
+        logger.info(instanceInfo.toString());
         // 构造客户端信息
-        InstanceInfo instanceInfo = new InstanceInfo().create(config);
         return instanceInfo;
     }
 
@@ -81,11 +83,11 @@ public class CmpClientAutoConfiguration {
 
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnMissingBean(value = CmpClient.class, search = SearchStrategy.CURRENT)
-    public CmpClient cmpClient(InstanceInfo instanceInfo){
+    public CmpClient cmpClient(InstanceInfo instanceInfo,RestTemplate restTemplate){
         // 初始化客户端
-        CmpClient cmpClient = new CmpClient(instanceInfo);
-        return cmpClient;
+        return new CmpClient(instanceInfo,restTemplate);
     }
+
 
 
 }
