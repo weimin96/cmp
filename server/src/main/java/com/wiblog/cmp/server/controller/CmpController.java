@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,7 +23,10 @@ public class CmpController {
 
     private static final Logger logger = LoggerFactory.getLogger(CmpController.class);
 
-    private final ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>> registry = new ConcurrentHashMap<>();;
+    /**
+     * 存放注册实例
+     */
+    private final ConcurrentHashMap<String, Map<String, Lease<InstanceInfo>>> registry = new ConcurrentHashMap<>();
 
     public CmpController(){
         logger.info("初始化构造器");
@@ -46,20 +50,22 @@ public class CmpController {
         // 保存服务注册信息
         // 获取appName 下的map
         Map<String, Lease<InstanceInfo>> gMap = registry.get(info.getAppName());
+        // 没有对应appName的客户端
         if(gMap == null){
-            final ConcurrentHashMap<String, Lease<InstanceInfo>> gNewMap = new ConcurrentHashMap<>();
-            /*
-               putIfAbsent
-               如果传入key对应的value已经存在，就返回存在的value，不进行替换。如果不存在，就添加key和value，返回null
-              */
-            //如果值不存在，则添加。否则返回旧值
-            gMap = registry.putIfAbsent(info.getAppName(), gNewMap);
-            if (gMap == null) {
-                gMap = gNewMap;
-            }
+            gMap = new HashMap<>();
+            gMap.put(info.getInstanceId(), new Lease<>(info, 20000));
+        }else{
             // 获取续租实例
             Lease<InstanceInfo> existingLease = gMap.get(info.getInstanceId());
+            if (existingLease == null){
+                existingLease = new Lease<>(info, 20000);
+            }else {
+                // 更新实例信息
+                existingLease.setHolder(info);
+            }
+            gMap.put(info.getInstanceId(),existingLease);
         }
+        registry.put(info.getAppName(),gMap);
         // 重新计算阈值
         // 保存注册队列
         // 更新缓存

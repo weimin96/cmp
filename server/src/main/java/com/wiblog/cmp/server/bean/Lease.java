@@ -31,6 +31,10 @@ public class Lease<T> {
 
     }
 
+    public void setHolder(T holder) {
+        this.holder = holder;
+    }
+
     /**
      *  客户端续约时，更新最后的更新时间 ， 用当前系统加上过期的时间
      */
