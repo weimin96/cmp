@@ -16,11 +16,30 @@ public class Lease<T> {
     public static final int DEFAULT_DURATION_IN_SECS = 90;
 
     private T holder;
+
+    /**
+     * 服务下线时间
+     */
     private long evictionTimestamp;
+
+    /**
+     * 服务注册时间
+     */
     private long registrationTimestamp;
+
+    /**
+     * 服务UP时间
+     */
     private long serviceUpTimestamp;
-    // Make it volatile so that the expiration task would see this quicker
+
+    /**
+     * 最后一次续约时间
+     */
     private volatile long lastUpdateTimestamp;
+
+    /**
+     * 心跳过期时间，默认 90s
+     */
     private long duration;
 
     public Lease(T r, int durationInSecs) {
@@ -69,22 +88,16 @@ public class Lease<T> {
         this.serviceUpTimestamp = serviceUpTimestamp;
     }
 
-    /**
-     * Checks if the lease of a given {@link com.netflix.appinfo.InstanceInfo} has expired or not.
-     */
     public boolean isExpired() {
         return isExpired(0L);
     }
 
     /**
-     * Checks if the lease of a given {@link com.netflix.appinfo.InstanceInfo} has expired or not.
-     *
-     * Note that due to renew() doing the 'wrong" thing and setting lastUpdateTimestamp to +duration more than
-     * what it should be, the expiry will actually be 2 * duration. This is a minor bug and should only affect
-     * instances that ungracefully shutdown. Due to possible wide ranging impact to existing usage, this will
-     * not be fixed.
-     *
-     * @param additionalLeaseMs any additional lease time to add to the lease evaluation in ms.
+     * Lease 每次心跳续约时都会更新最后一次续约时间 lastUpdateTimestamp。
+     * 如果服务下线则会更新下线时间 evictionTimestamp，这样 evictionTimestamp > 0 就表示服务已经下线了。
+     * 默认心跳续约时间超过 90s 服务就自动过期。
+     * @param additionalLeaseMs additionalLeaseMs 是一种补偿机制，可以当成默认值 0ms。
+     * @return
      */
     public boolean isExpired(long additionalLeaseMs) {
         return (evictionTimestamp > 0 || System.currentTimeMillis() > (lastUpdateTimestamp + duration + additionalLeaseMs));

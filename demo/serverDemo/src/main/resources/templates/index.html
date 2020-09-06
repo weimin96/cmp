@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:v-on="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- import Vue.js -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <!-- import stylesheet -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/iview/3.5.4/styles/iview.css" rel="stylesheet">
+    <!-- import iView -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/iview/3.5.4/iview.js"></script>
+    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+
+
+</head>
+<body>
+<div id="app">
+    <Row>
+        <i-col span="4">
+            <i-menu theme="light" active-name="1">
+                <menu-group title="系统管理">
+                    <menu-item name="1">
+                        <icon type="md-document"></icon>
+                        文章管理
+                    </menu-item>
+                    <menu-item name="2" >
+                        <icon type="md-chatbubbles"></icon>
+                        评论管理
+                    </menu-item>
+                </menu-group>
+
+            </i-menu>
+        </i-col>
+        <i-col span="20">
+            <p><router-link to="/home">go</router-link></p>
+            <router-view/>
+        </i-col>
+    </Row>
+
+
+
+</div>
+
+<div th:replace="component/viewNav :: view_nav"></div>
+<script th:replace="component/viewNav :: view_nav_script"></script>
+<script src="/js/router.js"></script>
+<script>
+
+</script>
+<script>
+
+    new Vue({
+        el: '#app',
+        data: {
+            theme3: 'light'
+        },
+        methods: {},
+        router,
+        components: {
+            // 'viewNav': viewNav
+        }
+    });
+</script>
+</body>
+</html>

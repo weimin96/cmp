@@ -1,0 +1,18 @@
+<html xmlns:th="http://www.thymeleaf.org">
+    <template th:fragment="project_home" id="ppp">
+        <div>{{title}}</div>
+    </template>
+
+    <script th:fragment="project_home_script">
+        var projectHome = {
+            template: '#ppp',
+            props: [],
+            data(){
+                return {title :'11'}
+            },
+            created(){
+
+            }
+        }
+    </script>
+</html>

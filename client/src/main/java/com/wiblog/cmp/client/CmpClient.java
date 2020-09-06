@@ -3,14 +3,13 @@ package com.wiblog.cmp.client;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.wiblog.cmp.client.bean.InstanceInfo;
-import com.wiblog.cmp.client.common.HttpResponse;
-import com.wiblog.cmp.client.common.StateEnum;
+import com.wiblog.cmp.client.config.CmpClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.ws.rs.core.Response;
 import java.util.concurrent.*;
 
 /**
@@ -20,7 +19,7 @@ import java.util.concurrent.*;
 @Component
 public class CmpClient {
 
-    public static final Logger log = LoggerFactory.getLogger(CmpClient.class);
+    private static final Logger log = LoggerFactory.getLogger(CmpClient.class);
 
     private final ScheduledExecutorService scheduler;
 
@@ -31,9 +30,12 @@ public class CmpClient {
 
     RestTemplate restTemplate;
 
-    public CmpClient(InstanceInfo instanceInfo, RestTemplate restTemplate) {
+    CmpClientConfig clientConfig;
+
+    public CmpClient(InstanceInfo instanceInfo, RestTemplate restTemplate, CmpClientConfig clientConfig) {
         this.instanceInfo = instanceInfo;
         this.restTemplate = restTemplate;
+        this.clientConfig = clientConfig;
         scheduler = Executors.newScheduledThreadPool(2,
                 new ThreadFactoryBuilder()
                         .setNameFormat("DiscoveryClient-%d")
@@ -44,7 +46,7 @@ public class CmpClient {
         // 心跳线程池
         heartbeatExecutor = new ThreadPoolExecutor(
                 1, 2, 0, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
+                new SynchronousQueue<>(),
                 new ThreadFactoryBuilder()
                         .setNameFormat("DiscoveryClient-HeartbeatExecutor-%d")
                         .setDaemon(true)
@@ -54,7 +56,7 @@ public class CmpClient {
         //
         cacheRefreshExecutor = new ThreadPoolExecutor(
                 1, 2, 0, TimeUnit.SECONDS,
-                new SynchronousQueue<Runnable>(),
+                new SynchronousQueue<>(),
                 new ThreadFactoryBuilder()
                         .setNameFormat("DiscoveryClient-CacheRefreshExecutor-%d")
                         .setDaemon(true)
@@ -63,9 +65,11 @@ public class CmpClient {
 
         // 注册
         if (register()) {
-
+            // 注册成功
+            log.info("注册成功");
         }
 
+        // 心跳维持
         initScheduledTasks();
 
     }
@@ -77,12 +81,12 @@ public class CmpClient {
                         "heartbeat",
                         scheduler,
                         heartbeatExecutor,
-                        60,
+                        clientConfig.getHeartIntervalTimerInSeconds(),
                         TimeUnit.SECONDS,
                         3,
                         new HeartbeatThread()
                 ),
-                60, TimeUnit.SECONDS);
+                clientConfig.getHeartIntervalTimerInSeconds(), TimeUnit.SECONDS);
     }
 
     /**
@@ -99,9 +103,9 @@ public class CmpClient {
 
         @Override
         public void run() {
-            /*if (renew()) {
-                lastSuccessfulHeartbeatTimestamp = System.currentTimeMillis();
-            }*/
+            if (renew()) {
+                log.info("心跳成功");
+            }
         }
     }
 
@@ -111,40 +115,44 @@ public class CmpClient {
      * @return
      */
     private boolean register() {
-        log.info("注册");
-        String data = JSONObject.toJSONString(instanceInfo);
-        Response response = null;
+        log.info("向注册中心注册-[{}:{}]", instanceInfo.getIpAddr(), instanceInfo.getPort());
+        log.info("请求url-[{}register]", instanceInfo.getServiceUrl());
+        JSONObject response = null;
         try {
-            response = restTemplate.postForObject(instanceInfo.getServiceUrl() + "register", data, Response.class);
+            response = restTemplate.postForObject(instanceInfo.getServiceUrl() + "register", instanceInfo, JSONObject.class);
+        } catch (ResourceAccessException e){
+            log.error("服务端连接失败",e.getMessage());
         } catch (Exception e) {
             log.error("注册异常", e);
         }
-        return response != null && 204 == response.getStatus();
+        log.info("{}", response);
+        return response != null && "204".equals(response.getString("status"));
     }
 
-}
+    /**
+     * 心跳请求
+     */
+    boolean renew() {
+        String url = instanceInfo.getServiceUrl() + "renew" ;
+        log.info("向注册中心发送心跳-[{}:{}]", instanceInfo.getIpAddr(), instanceInfo.getPort());
+        log.info("请求url-[{}]", url);
+        JSONObject response;
 
-/**
- * 心跳请求
- */
-    /*boolean renew() {
-        HttpResponse<InstanceInfo> httpResponse;
-        // 客户端
-        JSONObject jsonObject = restTemplate.postForObject(url, jsonString, JSONObject.class);
         try {
-            httpResponse = eurekaTransport.registrationClient.sendHeartBeat(instanceInfo.getAppName(), instanceInfo.getId(), instanceInfo, null);
-            if (httpResponse.getStatusCode() == 404) {
-                REREGISTER_COUNTER.increment();
-                long timestamp = instanceInfo.setIsDirtyWithTime();
-                boolean success = register();
-                if (success) {
-                    instanceInfo.unsetIsDirty(timestamp);
+            response = restTemplate.postForObject(url, instanceInfo.getAppName(), JSONObject.class);
+            if (response != null) {
+                String status = response.getString("status");
+                if ("404".equals(status)) {
+                    log.info("未注册，重新注册");
+                    return register();
                 }
-                return success;
+                return "200".equals(status);
             }
-            return httpResponse.getStatusCode() == 200;
         } catch (Throwable e) {
+            log.error("心跳异常", e);
             return false;
         }
-    }*/
+        return false;
+    }
+}
 

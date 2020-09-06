@@ -18,6 +18,15 @@ public class InstanceInfo {
 
     private volatile String serviceUrl;
 
+    private volatile int expiredTime;
+
+    public int getExpiredTime() {
+        return expiredTime;
+    }
+
+    public void setExpiredTime(int expiredTime) {
+        this.expiredTime = expiredTime;
+    }
 
     public String getServiceUrl() {
         return serviceUrl;

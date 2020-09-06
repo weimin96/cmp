@@ -1,0 +1,18 @@
+<html xmlns:th="http://www.thymeleaf.org">
+    <template th:fragment="nav_button_group" id="navButtonGroup">
+        <div>{{title}}</div>
+    </template>
+
+    <script th:fragment="nav_button_group_script">
+        var navButtonGroup = {
+            template: '#navButtonGroup',
+            props: [],
+            data(){
+                return {title :'11'}
+            },
+            created(){
+
+            }
+        }
+    </script>
+</html>

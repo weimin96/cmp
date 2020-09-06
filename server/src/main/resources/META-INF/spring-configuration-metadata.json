@@ -1,0 +1,31 @@
+{
+  "hints": [
+    {
+      "name": "cmp.server.eviction-interval-timer-in-ms",
+      "values": [
+        {
+          "value": 90000
+        },
+        {
+          "value": 60000
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "name": "cmp.server",
+      "type": "com.wiblog.cmp.server.bean.CmpServerConfig",
+      "sourceType": "com.wiblog.cmp.server.bean.CmpServerConfig"
+    }
+  ],
+  "properties": [
+    {
+      "name": "cmp.server.eviction-interval-timer-in-ms",
+      "type": "java.lang.Integer",
+      "description": "实例失效定时器执行间隔",
+      "sourceType": "com.wiblog.cmp.server.bean.CmpServerConfig"
+    }
+  ]
+
+}

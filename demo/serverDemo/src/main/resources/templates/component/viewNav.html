@@ -1,0 +1,19 @@
+<html xmlns:th="http://www.thymeleaf.org">
+    <template th:fragment="view_nav" id="viewNav">
+        <div><p>111</p></div>
+        home
+    </template>
+
+    <script th:fragment="view_nav_script">
+        var viewNav = {
+            template: '#viewNav',
+            props: [],
+            data(){
+                return {theme2: 'light'}
+            },
+            created(){
+
+            }
+        }
+    </script>
+</html>

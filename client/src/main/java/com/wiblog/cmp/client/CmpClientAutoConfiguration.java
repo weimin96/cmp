@@ -1,6 +1,7 @@
 package com.wiblog.cmp.client;
 
 import com.wiblog.cmp.client.bean.InstanceInfo;
+import com.wiblog.cmp.client.config.CmpClientConfig;
 import com.wiblog.cmp.client.config.HttpClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,8 @@ import java.util.UUID;
 
 
 /**
+ * 自动配置类 程序入口
+ *
  * @author pwm
  * @date 2020/1/31
  */
@@ -35,21 +38,25 @@ public class CmpClientAutoConfiguration {
 
     private ConfigurableEnvironment env;
 
+
     /**
      * 构造方法注入ConfigurableEnvironment
      */
     public CmpClientAutoConfiguration(ConfigurableEnvironment env) {
-        System.out.println("初始化客户端");
+        logger.info("初始化客户端");
         this.env = env;
     }
 
     private String getProperty(String property) {
-        return this.env.containsProperty(property) ? this.env.getProperty(property) : "";
+        return getProperty(property,"");
+    }
+
+    private String getProperty(String property,String defaultVal) {
+        return this.env.containsProperty(property) ? this.env.getProperty(property) : defaultVal;
     }
 
     /**
      * 获取客户端配置信息
-     * @return
      */
     @Bean
     @ConditionalOnMissingBean(value = InstanceInfo.class, search = SearchStrategy.CURRENT)
@@ -64,30 +71,36 @@ public class CmpClientAutoConfiguration {
         }
         // 服务端地址
         String serviceUrl = getProperty("cmp.instance.service-url");
+        // 客户端过期时间
+        String expiredTime = getProperty("cmp.instance.expired-time-in-seconds","90");
         // 客户端名称
         String applicationName = getProperty("spring.application.name");
         // 客户端端口号
-        int port = Integer.valueOf(env.getProperty("server.port",env.getProperty("port","8080")));
+        int port = Integer.valueOf(env.getProperty("server.port", env.getProperty("port", "8080")));
         InstanceInfo instanceInfo = new InstanceInfo();
         instanceInfo.setInstanceId(UUID.randomUUID().toString());
         instanceInfo.setIpAddr(ipAddress);
         instanceInfo.setServiceUrl(serviceUrl);
         instanceInfo.setPort(port);
         instanceInfo.setAppName(applicationName);
+        instanceInfo.setExpiredTime(Integer.valueOf(expiredTime));
         logger.info(instanceInfo.toString());
         // 构造客户端信息
         return instanceInfo;
     }
 
 
-
     @Bean(destroyMethod = "shutdown")
     @ConditionalOnMissingBean(value = CmpClient.class, search = SearchStrategy.CURRENT)
-    public CmpClient cmpClient(InstanceInfo instanceInfo,RestTemplate restTemplate){
+    public CmpClient cmpClient(InstanceInfo instanceInfo, RestTemplate restTemplate, CmpClientConfig clientConfig) {
         // 初始化客户端
-        return new CmpClient(instanceInfo,restTemplate);
+        return new CmpClient(instanceInfo, restTemplate,clientConfig);
     }
 
+    @Bean
+    public CmpClientConfig cmpClientConfig(){
+        return new CmpClientConfig();
+    }
 
 
 }
