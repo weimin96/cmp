@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <!-- import Vue.js -->
-    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="/lib/vue.js"></script>
     <!-- import stylesheet -->
     <link href="https://cdn.bootcdn.net/ajax/libs/iview/3.5.4/styles/iview.css" rel="stylesheet">
     <!-- import iView -->
-    <script src="https://cdn.bootcdn.net/ajax/libs/iview/3.5.4/iview.js"></script>
-    <script src="https://unpkg.com/vue-router/dist/vue-router.js"></script>
+    <script src="/lib/iview.js"></script>
+    <script src="/lib/vue-router.js"></script>
 
 
 </head>
@@ -20,20 +20,33 @@
         <i-col span="4">
             <i-menu theme="light" active-name="1">
                 <menu-group title="系统管理">
-                    <menu-item name="1">
+                    <menu-item name="1" to="/home">
                         <icon type="md-document"></icon>
-                        文章管理
+                        系统概览
                     </menu-item>
-                    <menu-item name="2" >
+                    <menu-item name="2" to="/home1">
+                        <icon type="md-document"></icon>
+                        实例信息
+                    </menu-item>
+                    <menu-item name="3" to="/home2">
                         <icon type="md-chatbubbles"></icon>
-                        评论管理
+                        定时任务
+                    </menu-item>
+                    <menu-item name="4" to="/timer">
+                        <icon type="md-chatbubbles"></icon>
+                        系统日志
                     </menu-item>
                 </menu-group>
 
             </i-menu>
         </i-col>
         <i-col span="20">
-            <p><router-link to="/home">go</router-link></p>
+            1
+            <Breadcrumb>
+                <breadcrumb-item :to="item.path" v-for="item of breadList" :key="item.path">
+                    {{item.name}}
+                </breadcrumb-item>
+            </Breadcrumb>
             <router-view/>
         </i-col>
     </Row>
@@ -42,8 +55,12 @@
 
 </div>
 
+<script src="https://cdn.bootcdn.net/ajax/libs/axios/0.20.0/axios.js"></script>
 <div th:replace="component/viewNav :: view_nav"></div>
 <script th:replace="component/viewNav :: view_nav_script"></script>
+
+<div th:replace="component/home :: home"></div>
+<script th:replace="component/home :: home_script"></script>
 <script src="/js/router.js"></script>
 <script>
 
@@ -53,14 +70,27 @@
     new Vue({
         el: '#app',
         data: {
-            theme3: 'light'
+            breadLoadName: '/',
+
+            breadList:[]
         },
-        methods: {},
+        mounted: function () {
+            this.loadChange()
+        },
+        methods: {
+            loadChange() {
+                this.breadListLast = []
+                let url = window.location.href;
+                url.split("/").forEach(e=>{
+                    console.log(e)
+                })
+            }
+        },
         router,
         components: {
-            // 'viewNav': viewNav
         }
     });
+
 </script>
 </body>
 </html>

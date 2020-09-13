@@ -1,6 +1,7 @@
 package com.wiblog.cmp.server.controller;
 
 import com.wiblog.cmp.server.ResponseCache;
+import com.wiblog.cmp.server.util.StatusInfo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,25 +21,17 @@ public class CmpWebController {
         return "index";
     }
 
-    /**
-     * 跳转首页
-     *//*
-    @GetMapping("/home")
-    public String home(){
-        return "home";
-    }
-
-    *//**
-     * 跳转首页
-     *//*
-    @GetMapping("/setting")
-    public String setting(){
-        return "setting";
-    }*/
-
     @GetMapping("/endpoint")
     @ResponseBody
     public Object endpoint(){
         return ResponseCache.single().getRegistry();
+    }
+
+    @GetMapping("/status")
+    @ResponseBody
+    public Object status(){
+
+        StatusInfo statusInfo = StatusInfo.Builder.newBuilder().build();
+        return statusInfo;
     }
 }

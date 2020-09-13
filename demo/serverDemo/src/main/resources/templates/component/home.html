@@ -1,0 +1,51 @@
+<html xmlns:th="http://www.thymeleaf.org">
+    <template th:fragment="home" id="home">
+        <div>
+
+            <i-table :columns="columns" :data="data"></i-table>
+        </div>
+    </template>
+
+    <script th:fragment="home_script">
+        var home = {
+            template: '#home',
+            props: [],
+            data(){
+                return {
+                    columns: [
+                        {
+                            title: '参数',
+                            key: 'name'
+                        },
+                        {
+                            title: '值',
+                            key: 'value'
+                        }
+                    ],
+                    data :[]
+                }
+            },
+            created(){
+                this.getSysStatusInfo()
+            },
+            methods:{
+                getSysStatusInfo(){
+                    let infoList = []
+                    axios.get("/status").then((res => {
+                        if (res.status === 200){
+                            let data = res.data.info;
+                            for (let key in data) {
+                                let item = {}
+                                item.name = key
+                                item.value=data[key]
+                                infoList.push(item)
+                            }
+                            this.data = infoList;
+                            console.log(this.data)
+                        }
+                    }))
+                }
+            }
+        }
+    </script>
+</html>
