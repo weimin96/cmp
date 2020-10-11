@@ -1,8 +1,20 @@
 const routes = [
     {
+        path: '/',
+        redirect: '/home'
+    },
+    {
         path: '/home',
         component: home,
-        meta: { title: '系统概览' }
+        meta: {
+            title: '系统概览',
+            breadcrumb:[
+                {
+                    name:'系统概览',
+                    path:'/home'
+                }
+            ]
+        }
     },
     {
         path: '/home1',

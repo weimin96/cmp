@@ -3,8 +3,11 @@ package com.wiblog.cmp.client;
 import com.wiblog.cmp.client.bean.InstanceInfo;
 import com.wiblog.cmp.client.config.CmpClientConfig;
 import com.wiblog.cmp.client.config.HttpClientConfig;
+import com.wiblog.cmp.client.log.RabbitmqConfig;
+import com.wiblog.cmp.client.log.LogClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
@@ -30,8 +33,8 @@ import java.util.UUID;
 @EnableConfigurationProperties
 // 加载默认client配置项
 //@ConditionalOnClass(DefaultClientConfig.class)
-@AutoConfigureAfter(HttpClientConfig.class)
-@Import(HttpClientConfig.class)
+@AutoConfigureAfter({HttpClientConfig.class,RabbitmqConfig.class})
+@Import({HttpClientConfig.class, RabbitmqConfig.class})
 public class CmpClientAutoConfiguration {
 
     private static final Logger logger = LoggerFactory.getLogger(CmpClientAutoConfiguration.class);
@@ -100,6 +103,12 @@ public class CmpClientAutoConfiguration {
     @Bean
     public CmpClientConfig cmpClientConfig(){
         return new CmpClientConfig();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(value = LogClient.class, search = SearchStrategy.CURRENT)
+    public LogClient logClient(RabbitTemplate rabbitTemplate){
+        return new LogClient(rabbitTemplate);
     }
 
 

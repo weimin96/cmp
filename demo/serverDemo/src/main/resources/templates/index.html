@@ -41,18 +41,17 @@
             </i-menu>
         </i-col>
         <i-col span="20">
-            1
             <Breadcrumb>
-                <breadcrumb-item :to="item.path" v-for="item of breadList" :key="item.path">
+                <breadcrumb-item>
+                    当前位置：
+                </breadcrumb-item>
+                <breadcrumb-item :to="{ path: item.path }" v-for="item in this.$router.history.current.meta.breadcrumb">
                     {{item.name}}
                 </breadcrumb-item>
             </Breadcrumb>
             <router-view/>
         </i-col>
     </Row>
-
-
-
 </div>
 
 <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.20.0/axios.js"></script>

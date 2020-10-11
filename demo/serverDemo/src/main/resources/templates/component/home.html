@@ -1,7 +1,6 @@
 <html xmlns:th="http://www.thymeleaf.org">
     <template th:fragment="home" id="home">
         <div>
-
             <i-table :columns="columns" :data="data"></i-table>
         </div>
     </template>
@@ -41,9 +40,12 @@
                                 infoList.push(item)
                             }
                             this.data = infoList;
-                            console.log(this.data)
                         }
-                    }))
+                    })).finally(() => {
+                        setTimeout(() => {
+                            this.getSysStatusInfo();
+                        }, 10000)
+                    })
                 }
             }
         }
