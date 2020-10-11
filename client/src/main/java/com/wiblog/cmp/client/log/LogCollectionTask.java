@@ -7,9 +7,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * 日志收集工作线程
@@ -19,6 +17,8 @@ public class LogCollectionTask implements Runnable {
     private RabbitTemplate rabbitTemplate;
 
     private String logFilePath;
+
+    private String logFile;
 
     /**
      * 定位
@@ -157,14 +157,62 @@ public class LogCollectionTask implements Runnable {
         }
     }
 
+    /**
+     * 获取日志文件
+     * @return File
+     */
     private File getLogFile(){
         try {
-            if (!StringUtils.isEmpty(this.logFilePath)){
-                return new File(this.logFilePath);
+            // 直接从缓存路径获取
+            if (!StringUtils.isEmpty(this.logFile)){
+                return new File(this.logFile);
             }
+            // 存在文件夹 读取日志文件
+            if (!StringUtils.isEmpty(this.logFilePath)){
+                String logFile;
+                logFile = getLatestFile(this.logFilePath);
+                // TODO
+            }
+
         }catch (Exception e){
             logger.error("打开日志失败",e);
         }
         return null;
+    }
+
+    /**
+     * 获取最新的日志文件
+     * @param p
+     * @return
+     */
+    public String getLatestFile(String p) {
+        File path = new File(p);
+        File[] files = path.listFiles();
+        if (files != null && files.length != 0) {
+            List<File> fileList = new ArrayList();
+            File[] var4 = files;
+            int var5 = files.length;
+
+            for(int var6 = 0; var6 < var5; ++var6) {
+                File file = var4[var6];
+                if ((file.getName().endsWith(".out") || file.getName().endsWith(".log")) && file.getName().startsWith("log")) {
+                    fileList.add(file);
+                }
+            }
+
+            if (fileList.size() == 0) {
+                return null;
+            } else {
+                files = (File[])fileList.toArray(new File[fileList.size()]);
+                Arrays.sort(files, new Comparator<File>() {
+                    public int compare(File file1, File file2) {
+                        return (int)(file2.lastModified() - file1.lastModified());
+                    }
+                });
+                return files[0].getName();
+            }
+        } else {
+            return null;
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.wiblog.cmp.client;
 import com.wiblog.cmp.client.bean.InstanceInfo;
 import com.wiblog.cmp.client.config.CmpClientConfig;
 import com.wiblog.cmp.client.config.HttpClientConfig;
+import com.wiblog.cmp.client.log.LogConfigProperties;
 import com.wiblog.cmp.client.log.RabbitmqConfig;
 import com.wiblog.cmp.client.log.LogClient;
 import org.slf4j.Logger;
@@ -30,7 +31,8 @@ import java.util.UUID;
  * @date 2020/1/31
  */
 @Configuration
-@EnableConfigurationProperties
+// TODO 加载日志配置 转移地方
+@EnableConfigurationProperties({LogConfigProperties.class})
 // 加载默认client配置项
 //@ConditionalOnClass(DefaultClientConfig.class)
 @AutoConfigureAfter({HttpClientConfig.class,RabbitmqConfig.class})
@@ -41,21 +43,16 @@ public class CmpClientAutoConfiguration {
 
     private ConfigurableEnvironment env;
 
+    private LogConfigProperties logConfigProperties;
+
 
     /**
      * 构造方法注入ConfigurableEnvironment
      */
-    public CmpClientAutoConfiguration(ConfigurableEnvironment env) {
+    public CmpClientAutoConfiguration(ConfigurableEnvironment env,LogConfigProperties logConfigProperties) {
         logger.info("初始化客户端");
         this.env = env;
-    }
-
-    private String getProperty(String property) {
-        return getProperty(property,"");
-    }
-
-    private String getProperty(String property,String defaultVal) {
-        return this.env.containsProperty(property) ? this.env.getProperty(property) : defaultVal;
+        this.logConfigProperties = logConfigProperties;
     }
 
     /**
@@ -108,8 +105,14 @@ public class CmpClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(value = LogClient.class, search = SearchStrategy.CURRENT)
     public LogClient logClient(RabbitTemplate rabbitTemplate){
-        return new LogClient(rabbitTemplate);
+        return new LogClient(rabbitTemplate,logConfigProperties.getLogPath());
     }
 
+    private String getProperty(String property) {
+        return getProperty(property,"");
+    }
 
+    private String getProperty(String property,String defaultVal) {
+        return this.env.containsProperty(property) ? this.env.getProperty(property) : defaultVal;
+    }
 }
