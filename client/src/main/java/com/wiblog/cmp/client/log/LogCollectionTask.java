@@ -7,6 +7,7 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -16,9 +17,15 @@ public class LogCollectionTask implements Runnable {
 
     private RabbitTemplate rabbitTemplate;
 
-    private String logFilePath;
+    /**
+     * 日志文件目录
+     */
+    private String logDir;
 
-    private String logFile;
+    /**
+     * 最新日志文件路径
+     */
+    private String logFilePath;
 
     /**
      * 定位
@@ -32,12 +39,12 @@ public class LogCollectionTask implements Runnable {
 
     private static final Logger logger = LoggerFactory.getLogger(LogCollectionTask.class);
 
-    public LogCollectionTask(String logFilePath,RabbitTemplate rabbitTemplate) {
-        this.logFilePath = logFilePath;
+    public LogCollectionTask(String logDir, RabbitTemplate rabbitTemplate) {
+        this.logDir = logDir;
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    private static String getFilecharset(File sourceFile) {
+    private static String getFileCharset(File sourceFile) {
         String charset = "GBK";
         byte[] first3Bytes = new byte[3];
 
@@ -113,7 +120,7 @@ public class LogCollectionTask implements Runnable {
     }
 
     private void work() throws Exception {
-        List<String> list = getLog();
+        List<String> list = getFileLog();
         if (list.size()>0){
             list.forEach(e->{
                 rabbitTemplate.convertAndSend(RabbitmqConfig.EXCHANGE_KEY, RabbitmqConfig.ROUTING_KEY,e);
@@ -122,15 +129,18 @@ public class LogCollectionTask implements Runnable {
 
     }
 
-    private List<String> getLog() {
+    /**
+     * 从文件中获取最新日志的内容
+     */
+    private List<String> getFileLog() {
         File file = this.getLogFile();
         if (file != null && file.exists()){
 
             if (this.charset == null){
-                this.charset = getFilecharset(file);
+                this.charset = getFileCharset(file);
             }
 
-            List list = new ArrayList();
+            List<String> list = new ArrayList<>();
 
             RandomAccessFile randomAccessFile = null;
             try {
@@ -139,7 +149,7 @@ public class LogCollectionTask implements Runnable {
 
                 String tmp = "";
                 while ((tmp = randomAccessFile.readLine())!= null){
-                    String str = new String(tmp.getBytes("ISO-8859-1"), Charset.forName(this.charset));
+                    String str = new String(tmp.getBytes(StandardCharsets.ISO_8859_1), Charset.forName(this.charset));
                     if (!StringUtils.isEmpty(str)){
                         list.add(str);
                     }
@@ -158,20 +168,23 @@ public class LogCollectionTask implements Runnable {
     }
 
     /**
-     * 获取日志文件
+     * 获取最新的日志文件
      * @return File
      */
     private File getLogFile(){
         try {
             // 直接从缓存路径获取
-            if (!StringUtils.isEmpty(this.logFile)){
-                return new File(this.logFile);
+            if (!StringUtils.isEmpty(this.logFilePath)){
+                return new File(this.logFilePath);
             }
             // 存在文件夹 读取日志文件
-            if (!StringUtils.isEmpty(this.logFilePath)){
-                String logFile;
-                logFile = getLatestFile(this.logFilePath);
-                // TODO
+            if (!StringUtils.isEmpty(this.logDir)){
+                String fileName;
+                fileName = getLatestFile(this.logDir);
+                if (!StringUtils.isEmpty(fileName)){
+                    this.logFilePath = this.logDir+"/"+fileName;
+                    return new File(this.logFilePath);
+                }
             }
 
         }catch (Exception e){

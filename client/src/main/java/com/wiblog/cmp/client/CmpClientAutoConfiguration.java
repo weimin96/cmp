@@ -105,7 +105,7 @@ public class CmpClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(value = LogClient.class, search = SearchStrategy.CURRENT)
     public LogClient logClient(RabbitTemplate rabbitTemplate){
-        return new LogClient(rabbitTemplate,logConfigProperties.getLogPath());
+        return new LogClient(rabbitTemplate,logConfigProperties.getLogDir());
     }
 
     private String getProperty(String property) {

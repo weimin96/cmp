@@ -20,9 +20,9 @@ public class LogClient {
 
     private ScheduledExecutorService scheduler;
 
-    public LogClient(RabbitTemplate rabbitTemplate,String logPath) {
+    public LogClient(RabbitTemplate rabbitTemplate,String logDir) {
         logger.info("初始化日志收集客户端");
-        if (StringUtils.isEmpty(logPath)){
+        if (StringUtils.isEmpty(logDir)){
             logger.error("日志路径不能为空");
             return;
         }
@@ -34,7 +34,7 @@ public class LogClient {
             t.setName("cmp.logCollection");
             return t;
         });
-        LogCollectionTask logCollectionTask = new LogCollectionTask(logPath,rabbitTemplate);
+        LogCollectionTask logCollectionTask = new LogCollectionTask(logDir,rabbitTemplate);
         this.scheduler.scheduleWithFixedDelay(logCollectionTask, 0L, 10, TimeUnit.SECONDS);
 
     }
