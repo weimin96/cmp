@@ -1,82 +1,60 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!-- 从高到地低 OFF 、 FATAL 、 ERROR 、 WARN 、 INFO 、 DEBUG 、 TRACE 、 ALL -->
-<!-- 日志输出规则 根据当前ROOT 级别，日志输出时，级别高于root默认的级别时 会输出 -->
-<!-- 以下 每个配置的 filter 是过滤掉输出文件里面，会出现高级别文件，依然出现低级别的日志信息，通过filter 过滤只记录本级别的日志 -->
-
-
-<!-- 属性描述 scan：性设置为true时，配置文件如果发生改变，将会被重新加载，默认值为true scanPeriod:设置监测配置文件是否有修改的时间间隔，如果没有给出时间单位，默认单位是毫秒。当scan为true时，此属性生效。默认的时间间隔为1分钟。
-	debug:当此属性设置为true时，将打印出logback内部日志信息，实时查看logback运行状态。默认值为false。 -->
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
-    <contextName>d1money-web-ys-ems</contextName>
 
-    <!-- 定义日志文件 输入位置 -->
     <property name="log_dir" value="logs" />
-    <!-- 日志最大的历史 30天 -->
-    <property name="maxHistory" value="3" />
-    <property name="maxFileSize" value="10MB" />
 
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
     <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
     <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
 
     <property name="FILE_LOG_PATTERN" value="${FILE_LOG_PATTERN:-%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd HH:mm:ss.SSS}} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } [%15.15t] %-40.40logger{39} [%4.4L]   :%m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}}"/>
-    <!--<property name="FILE_NAME_PATTERN" value="log-%d{yyyy-MM-dd-HH-mm}.log"/>-->
-
     <property name="FILE_NAME_PATTERN" value="${log_dir}/log-%d{yyyy-MM-dd}-%i.log"/>
-    <!--<property name="FILE_NAME_PATTERN" value="log-%d{yyyy-MM-dd}.log"/>-->
 
 
-    <!-- ConsoleAppender 控制台输出日志 -->
+
+    <!-- %m输出的信息,%p日志级别,%t线程名,%d日期,%c类的全名,%i索引【从数字0开始递增】,,, -->
+    <!-- appender是configuration的子节点，是负责写日志的组件。 -->
+    <!-- ConsoleAppender：把日志输出到控制台 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- 对日志进行格式化 -->
         <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <!--<charset>utf8</charset>-->
+        </encoder>
+    </appender>
+
+    <!-- RollingFileAppender：滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件 -->
+    <!-- 以下的大概意思是：1.先按日期存日志，日期变了，将前一天的日志文件名重命名为XXX%日期%索引，新的日志仍然是sys.log -->
+    <!--             2.如果日期没有发生变化，但是当前日志的文件大小超过1KB时，对当前日志进行分割 重命名-->
+    <appender name="syslog"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+<!--        <File>${log_dir}/log.log</File>-->
+        <!-- rollingPolicy:当发生滚动时，决定 RollingFileAppender 的行为，涉及文件移动和重命名。 -->
+        <!-- TimeBasedRollingPolicy： 最常用的滚动策略，它根据时间来制定滚动策略，既负责滚动也负责出发滚动 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- 活动文件的名字会根据fileNamePattern的值，每隔一段时间改变一次 -->
+            <!-- 文件名：log/log.2017-12-05.0.log -->
+            <fileNamePattern>${FILE_NAME_PATTERN}</fileNamePattern>
+            <!-- 每产生一个日志文件，该日志文件的保存期限为30天 -->
+            <maxHistory>30</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy  class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <!-- maxFileSize:这是活动文件的大小，默认值是10MB -->
+                <maxFileSize>30MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <!-- pattern节点，用来设置日志的输入格式 -->
             <pattern>
                 ${FILE_LOG_PATTERN}
             </pattern>
+            <!-- 记录日志的编码 -->
+            <!--<charset>utf8</charset> &lt;!&ndash; 此处设置字符集 &ndash;&gt;-->
         </encoder>
     </appender>
-
-    <!-- ERROR级别日志 -->
-    <!-- 滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件 RollingFileAppender -->
-    <appender name="LOG"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- 过滤器，只记录WARN级别的日志 -->
-        <!-- <filter class="ch.qos.logback.classic.filter.LevelFilter">
-             <level>INFO</level>
-             <onMatch>ACCEPT</onMatch>
-             <onMismatch>DENY</onMismatch>
-         </filter>-->
-        <!-- 最常用的滚动策略，它根据时间来制定滚动策略.既负责滚动也负责出发滚动 -->
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-
-            <!--日志输出位置 可相对、和绝对路径 -->
-
-            <fileNamePattern>
-                ${FILE_NAME_PATTERN}
-            </fileNamePattern>
-            <!-- 可选节点，控制保留的归档文件的最大数量，超出数量就删除旧文件假设设置每个月滚动，且<maxHistory>是6， 则只保存最近6个月的文件，删除之前的旧文件。注意，删除旧文件是，那些为了归档而创建的目录也会被删除 -->
-            <maxHistory>${maxHistory}</maxHistory>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>${maxFileSize}</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-
-        </rollingPolicy>
-
-        <encoder>
-            <!--
-            2019-12-16 14:53:25.078  INFO 15176 \-\-\- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 10 ms
-             -->
-            <pattern> ${FILE_LOG_PATTERN}</pattern>
-        </encoder>
-    </appender>
-
-
-    <!-- root级别 DEBUG -->
+    <!-- 控制台输出日志级别 -->
     <root level="info">
-        <!-- 文件输出 -->
-        <appender-ref ref="LOG" />
-        <!-- 控制台输出 -->
         <appender-ref ref="STDOUT" />
+
+        <!-- 文件输出 -->
+        <appender-ref ref="syslog" />
     </root>
+
 </configuration>

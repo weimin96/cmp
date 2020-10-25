@@ -12,6 +12,7 @@ import java.util.*;
 
 /**
  * 日志收集工作线程
+ * @author pwm
  */
 public class LogCollectionTask implements Runnable {
 

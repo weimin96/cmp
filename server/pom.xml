@@ -113,6 +113,12 @@
             之后依赖此项目的项目如果想要使用devtools，就要重新引入-->
             <optional>false</optional>
         </dependency>
+        <!--        grok 日志分析-->
+        <dependency>
+            <groupId>io.krakens</groupId>
+            <artifactId>java-grok</artifactId>
+            <version>0.1.9</version>
+        </dependency>
     </dependencies>
 
     <build>
