@@ -3,6 +3,7 @@ package com.wiblog.cmp.client.log;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
@@ -40,7 +41,12 @@ public class LogScannerTask {
     /**
      * 扫描频率 秒
      */
-    private int scanFrequency = 10;
+    private int scanFrequency = 15;
+
+    /**
+     * 读取文件频率
+     */
+    private int readFrequency = 10;
 
     /**
      * 文件的最后更新时间超过这个值就忽略 秒
@@ -56,12 +62,17 @@ public class LogScannerTask {
 
     private final ScheduledExecutorService scheduler;
 
+    private final ScheduledFuture<?> scannerFuture;
+
+    private RabbitTemplate rabbitTemplate;
+
     /**
      * 正在监听文件的线程
      */
     public static final ConcurrentHashMap<String, Object> WATCHER = new ConcurrentHashMap<>();
 
     public LogScannerTask() {
+        this.rabbitTemplate = rabbitTemplate;
         this.sinceDbPath = System.getProperty("java.io.tmpdir") +
                 sinceDbName +
                 DigestUtils.md5DigestAsHex(System.getProperty("user.dir").getBytes());
@@ -74,14 +85,14 @@ public class LogScannerTask {
                 .setDaemon(true).build();
         this.scheduler = new ScheduledThreadPoolExecutor(5, threadFactory);
 
-        this.scheduler.scheduleWithFixedDelay(new LogScannerRunnable(), 0, scanFrequency, TimeUnit.SECONDS);
+        this.scannerFuture = this.scheduler.scheduleWithFixedDelay(new LogScannerRunnable(), 0, scanFrequency, TimeUnit.SECONDS);
     }
 
     /**
      * 读取sinceDb内容
-     * <p>
+     *
      * SinceDb格式
-     * innode pos
+     * id pos
      */
     private LinkedHashMap<String, String> getSinceDb() {
         LinkedHashMap<String, String> result = new LinkedHashMap<>();
@@ -110,16 +121,14 @@ public class LogScannerTask {
      */
     class LogScannerRunnable implements Runnable {
 
-        boolean isRunning = true;
-
         @Override
         public void run() {
-            if (isRunning) {
-                this.work();
-            }
+            this.work();
         }
 
         private void work() {
+            // TODO 心跳检测
+            logger.info("开始监听日志文件夹");
             // 更新sinceDb内容
             LinkedHashMap<String, String> sinceDb = inheritableThreadLocal.get();
             writeSinceDb(sinceDb);
@@ -133,7 +142,8 @@ public class LogScannerTask {
                 File[] childFiles = childFile.listFiles();
                 if (childFiles == null) {
                     logger.error("没有扫描到日志文件{}", logDir);
-                    // TODO 关闭定时器
+                    // 关闭定时器
+                    scannerFuture.cancel(true);
                     return;
                 }
                 for (File file : childFiles) {
@@ -155,16 +165,17 @@ public class LogScannerTask {
                     String id = DigestUtils.md5DigestAsHex(path.getBytes());
                     // 获取行号
                     String posStr = sinceDb.get(id);
-                    int pos = 0;
+                    long pos = 0;
                     if (!StringUtils.isEmpty(posStr)) {
-                        pos = Integer.parseInt(posStr);
+                        pos = Long.parseLong(posStr);
                     }
                     // 放入sinceDb等待下次更新
                     sinceDb.putIfAbsent(id, String.valueOf(pos));
                     // 如果该文件没有被监听
                     if (!WATCHER.containsKey(id)) {
                         // 启动文件监听器
-                        ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(new LogCollectionTask(path, pos), 0L, 10, TimeUnit.SECONDS);
+                        ScheduledFuture<?> future = scheduler.scheduleWithFixedDelay(new LogCollectionTask(id,path, pos,inheritableThreadLocal,rabbitTemplate),
+                                0L, readFrequency, TimeUnit.SECONDS);
                         WATCHER.put(id, future);
                     }
                 }
