@@ -24,7 +24,7 @@ public class LogListener {
     @RabbitHandler
     public void process(String content){
         Map<String, Object> resultMap = GrokUtil.toLogMap(content);
-        logger.info("Result = {}", resultMap);
+        System.out.println("日志-》"+content);
         // TODO 入库
     }
 

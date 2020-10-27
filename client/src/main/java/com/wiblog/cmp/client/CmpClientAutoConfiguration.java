@@ -4,8 +4,8 @@ import com.wiblog.cmp.client.bean.InstanceInfo;
 import com.wiblog.cmp.client.config.CmpClientConfig;
 import com.wiblog.cmp.client.config.HttpClientConfig;
 import com.wiblog.cmp.client.log.LogConfigProperties;
+import com.wiblog.cmp.client.log.LogScannerTask;
 import com.wiblog.cmp.client.log.RabbitmqConfig;
-import com.wiblog.cmp.client.log.LogClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -103,9 +103,9 @@ public class CmpClientAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(value = LogClient.class, search = SearchStrategy.CURRENT)
-    public LogClient logClient(RabbitTemplate rabbitTemplate){
-        return new LogClient(rabbitTemplate,logConfigProperties.getLogDir());
+    @ConditionalOnMissingBean(value = LogScannerTask.class, search = SearchStrategy.CURRENT)
+    public LogScannerTask logClient(RabbitTemplate rabbitTemplate){
+        return new LogScannerTask(rabbitTemplate,logConfigProperties);
     }
 
     private String getProperty(String property) {

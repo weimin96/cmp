@@ -15,6 +15,8 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * SinceDb操作工具
@@ -42,19 +44,32 @@ public class SinceDbUtils {
                 DigestUtils.md5DigestAsHex(System.getProperty("user.dir").getBytes());
     }
 
-    private static final LinkedHashMap<String, String> sinceDbDate = new LinkedHashMap<>();
+    public static void main(String[] args) {
+        System.out.println(System.getProperty("java.io.tmpdir"));
+    }
+
+    private static final LinkedHashMap<String, String> SINCE_DB_DATE = new LinkedHashMap<>();
+
+    /**
+     * 读写锁
+     */
+    private static final ReentrantReadWriteLock READ_WRITE_LOCK = new ReentrantReadWriteLock();
+
+    private static final Lock READ_LOCK = READ_WRITE_LOCK.readLock();
+    private static final Lock WRITE_LOCK = READ_WRITE_LOCK.writeLock();
 
 
     /**
      * 读取sinceDb内容
-     *
+     * <p>
      * SinceDb格式
      * id pos
      */
-    public static synchronized LinkedHashMap<String, String> getSinceDb() {
-        if (sinceDbDate.size() > 0){
-            return sinceDbDate;
+    public static LinkedHashMap<String, String> getSinceDb() {
+        if (SINCE_DB_DATE.size() > 0) {
+            return SINCE_DB_DATE;
         }
+        READ_LOCK.lock();
         try {
             Path file = Paths.get(sinceDbPath);
             if (!Files.exists(file)) {
@@ -64,24 +79,30 @@ public class SinceDbUtils {
             lines.forEach(str -> {
                 if (!StringUtils.isEmpty(str)) {
                     String[] split = str.split(" ");
-                    sinceDbDate.put(split[0], split[1]);
+                    SINCE_DB_DATE.put(split[0], split[1]);
                 }
             });
 
         } catch (IOException e) {
             logger.error("读取sinceDb异常", e);
+        } finally {
+            READ_LOCK.unlock();
         }
-        return sinceDbDate;
+        return SINCE_DB_DATE;
     }
 
     public static void writeSinceDb(LinkedHashMap<String, String> sinceDb) {
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(sinceDbPath), true))) {
+        WRITE_LOCK.lock();
+        // append=false时会先清空文件内容
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(sinceDbPath), false))) {
             for (Map.Entry<String, String> entry : sinceDb.entrySet()) {
                 bufferedWriter.newLine();
                 bufferedWriter.write(entry.getKey() + " " + entry.getValue());
             }
         } catch (IOException e) {
             logger.error("sinceDb写入异常", e);
+        } finally {
+            WRITE_LOCK.unlock();
         }
 
     }
