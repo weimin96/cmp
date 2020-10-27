@@ -4,6 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
@@ -34,11 +35,6 @@ public class LogScannerTask {
     public String logDir;
 
     /**
-     * 注册表文件路径
-     */
-    public String sinceDbPath;
-
-    /**
      * 扫描频率 秒
      */
     private int scanFrequency = 15;
@@ -53,17 +49,11 @@ public class LogScannerTask {
      */
     private int ignoreOlder = 86400;
 
-    /**
-     * sinceDbName文件名
-     */
-    public static final String sinceDbName = "cmp_sinceDb_";
-
-    private static final InheritableThreadLocal<LinkedHashMap<String, String>> inheritableThreadLocal = new InheritableThreadLocal<>();
-
     private final ScheduledExecutorService scheduler;
 
     private final ScheduledFuture<?> scannerFuture;
 
+    @Autowired
     private RabbitTemplate rabbitTemplate;
 
     /**
@@ -72,12 +62,9 @@ public class LogScannerTask {
     public static final ConcurrentHashMap<String, Object> WATCHER = new ConcurrentHashMap<>();
 
     public LogScannerTask() {
-        this.rabbitTemplate = rabbitTemplate;
-        this.sinceDbPath = System.getProperty("java.io.tmpdir") +
-                sinceDbName +
-                DigestUtils.md5DigestAsHex(System.getProperty("user.dir").getBytes());
+
         // 读取注册表文件
-        LinkedHashMap<String, String> sinceDb = this.getSinceDb();
+        LinkedHashMap<String, String> sinceDb = SinceDbUtils.getSinceDb();
         inheritableThreadLocal.set(sinceDb);
 
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
@@ -88,32 +75,7 @@ public class LogScannerTask {
         this.scannerFuture = this.scheduler.scheduleWithFixedDelay(new LogScannerRunnable(), 0, scanFrequency, TimeUnit.SECONDS);
     }
 
-    /**
-     * 读取sinceDb内容
-     *
-     * SinceDb格式
-     * id pos
-     */
-    private LinkedHashMap<String, String> getSinceDb() {
-        LinkedHashMap<String, String> result = new LinkedHashMap<>();
-        try {
-            Path file = Paths.get(this.sinceDbPath);
-            if (!Files.exists(file)) {
-                Files.createFile(file);
-            }
-            List<String> lines = Files.readAllLines(file);
-            lines.forEach(str -> {
-                if (!StringUtils.isEmpty(str)) {
-                    String[] split = str.split(" ");
-                    result.put(split[0], split[1]);
-                }
-            });
 
-        } catch (IOException e) {
-            logger.error("读取sinceDb异常", e);
-        }
-        return result;
-    }
 
     /**
      * 监听文件列表
@@ -131,7 +93,7 @@ public class LogScannerTask {
             logger.info("开始监听日志文件夹");
             // 更新sinceDb内容
             LinkedHashMap<String, String> sinceDb = inheritableThreadLocal.get();
-            writeSinceDb(sinceDb);
+            SinceDbUtils.writeSinceDb(sinceDb);
             long nowTime = System.currentTimeMillis();
             File root = new File(logDir);
             // 层级遍历文件树
@@ -182,17 +144,7 @@ public class LogScannerTask {
             }
         }
 
-        private void writeSinceDb(LinkedHashMap<String, String> sinceDb) {
-            try (BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(new File(sinceDbPath), true))) {
-                for (Map.Entry<String, String> entry : sinceDb.entrySet()) {
-                    bufferedWriter.newLine();
-                    bufferedWriter.write(entry.getKey() + " " + entry.getValue());
-                }
-            } catch (IOException e) {
-                logger.error("sinceDb写入异常", e);
-            }
 
-        }
     }
 
     public static void main(String[] args) {
