@@ -1,5 +1,6 @@
 package com.wiblog.cmp.client.log;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,6 +181,11 @@ public class LogScannerTask {
         private long pos;
 
         /**
+         * 行号
+         */
+        private long row;
+
+        /**
          * 文件格式
          */
         private String charset = null;
@@ -201,10 +207,10 @@ public class LogScannerTask {
 
         private void work() throws Exception {
             logger.info("开始日志收集");
-            List<String> list = getFileLog();
+            List<LogMessage> list = getFileLog();
             if (list.size() > 0) {
                 list.forEach(e -> {
-                    rabbitTemplate.convertAndSend(RabbitmqConfig.EXCHANGE_KEY, RabbitmqConfig.ROUTING_KEY, e);
+                    rabbitTemplate.convertAndSend(RabbitmqConfig.EXCHANGE_KEY, RabbitmqConfig.ROUTING_KEY, JSONObject.toJSONString(e));
                 });
             }
         }
@@ -212,7 +218,7 @@ public class LogScannerTask {
         /**
          * 从文件中获取最新日志的内容
          */
-        private List<String> getFileLog() {
+        private List<LogMessage> getFileLog() {
             File file = new File(this.path);
             if (file.exists()) {
 
@@ -220,7 +226,7 @@ public class LogScannerTask {
                     this.charset = FileUtils.getFileCharset(file);
                 }
 
-                List<String> list = new ArrayList<>();
+                List<LogMessage> list = new ArrayList<>();
 
                 RandomAccessFile randomAccessFile;
                 try {
@@ -231,7 +237,15 @@ public class LogScannerTask {
                     while ((tmp = randomAccessFile.readLine()) != null) {
                         String str = new String(tmp.getBytes(StandardCharsets.ISO_8859_1), Charset.forName(this.charset));
                         if (!StringUtils.isEmpty(str)) {
-                            list.add(str);
+                            // 不是首行合并到上一行
+                            if (!FileUtils.isFirstLine(str) && list.size()>0){
+                                LogMessage logMessage = list.get(list.size()-1);
+                                logMessage.str(logMessage.getStr()+System.lineSeparator()+str);
+                            }else{
+                                LogMessage logMessage = buildMessage(str);
+                                list.add(logMessage);
+                            }
+
                         }
                     }
                     this.pos = randomAccessFile.getFilePointer();
@@ -247,5 +261,9 @@ public class LogScannerTask {
                 return Collections.emptyList();
             }
         }
+    }
+
+    private LogMessage buildMessage(String str){
+        return LogMessage.builder().str(str).build();
     }
 }

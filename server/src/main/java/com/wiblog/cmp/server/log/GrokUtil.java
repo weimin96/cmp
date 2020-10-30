@@ -26,7 +26,7 @@ public class GrokUtil {
     }
 
     public static Map<String, Object> toLogMap(String message){
-        return toMap("^%{TIMESTAMP_ISO8601:timestamp} \\s*%{LOGLEVEL:level} %{NUMBER:pid} \\[\\s*%{GREEDYDATA:thread}] %{JAVACLASS:class}\\s*\\[\\s*%{NUMBER:line}\\]\\s*:%{GREEDYDATA:msg}",message);
+        return toMap("^\\[%{TIMESTAMP_ISO8601:timestamp}] \\s*%{LOGLEVEL:level} %{NUMBER:pid} \\[\\s*%{GREEDYDATA:thread}] %{JAVACLASS:class}\\s*\\[\\s*%{NUMBER:line}\\]\\s*:%{GREEDYDATA:msg}",message);
     }
 
 }

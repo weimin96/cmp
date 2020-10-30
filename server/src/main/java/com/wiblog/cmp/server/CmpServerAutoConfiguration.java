@@ -14,6 +14,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
 /**
  * @author pwm
@@ -23,6 +24,7 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties
 @AutoConfigureAfter({CmpController.class, RabbitmqConfig.class})
 // TODO 换个地方注入组件
+@EnableElasticsearchRepositories(basePackages = "com.wiblog.cmp.server.log")
 @Import({CmpController.class, RabbitmqConfig.class, LogListener.class})
 public class CmpServerAutoConfiguration {
     private static final Logger log = LoggerFactory.getLogger(CmpServerAutoConfiguration.class);

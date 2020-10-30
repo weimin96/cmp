@@ -1,8 +1,15 @@
 package com.wiblog.cmp.client.log;
 
+import org.springframework.util.StringUtils;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * @author pwm
@@ -71,5 +78,25 @@ public class FileUtils {
         }
 
         return charset;
+    }
+
+    public static boolean isFirstLine(String str){
+        String regex = "^\\[.*";
+        return str.matches(regex);
+    }
+
+    public static String removeWrap(String str){
+        String lineSeparator = System.lineSeparator();
+        if (str.endsWith(lineSeparator)){
+            str = str.substring(0,str.length()-lineSeparator.length());
+        }
+        return str;
+    }
+
+
+    public static void main(String[] args) {
+        String regex = "^\\[.*";
+        String a = "INFO][2020-10-29 14:06][sundun.ZfptServiceApplication]Started ZfptServiceApplication in 41.998 seconds (JVM running for 49.185)";
+        System.out.println(a.matches(regex));
     }
 }
