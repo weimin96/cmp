@@ -19,10 +19,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * SinceDb操作工具
+ * <p>SinceDb操作工具</p>
  *
  * @author panweimin
- * @create 2020-10-27 9:04
  */
 public class SinceDbUtils {
 

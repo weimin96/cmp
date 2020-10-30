@@ -1,10 +1,9 @@
-package com.wiblog.cmp.server.bean;
+package com.wiblog.cmp.common.bean;
 
 /**
  * 客户端信息
  *
  * @author pwm
- * @date 2020/2/16
  */
 public class InstanceInfo {
 
@@ -19,6 +18,16 @@ public class InstanceInfo {
     private volatile String serviceUrl;
 
     private volatile int expiredTime;
+
+    private volatile boolean state;
+
+    public boolean getState() {
+        return state;
+    }
+
+    public void setState(boolean state) {
+        this.state = state;
+    }
 
     public int getExpiredTime() {
         return expiredTime;

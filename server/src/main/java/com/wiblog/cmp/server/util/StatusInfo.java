@@ -7,7 +7,6 @@ import java.util.Map;
 
 /**
  * @author pwm
- * @date 2020/9/13
  */
 public class StatusInfo {
 

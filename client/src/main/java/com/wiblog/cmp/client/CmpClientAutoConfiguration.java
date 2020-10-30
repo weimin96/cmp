@@ -1,14 +1,15 @@
 package com.wiblog.cmp.client;
 
-import com.wiblog.cmp.client.bean.InstanceInfo;
 import com.wiblog.cmp.client.config.CmpClientConfig;
 import com.wiblog.cmp.client.config.HttpClientConfig;
 import com.wiblog.cmp.client.log.LogConfigProperties;
 import com.wiblog.cmp.client.log.LogScannerTask;
 import com.wiblog.cmp.client.log.RabbitmqConfig;
+import com.wiblog.cmp.common.bean.InstanceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.SearchStrategy;
@@ -25,10 +26,9 @@ import java.util.UUID;
 
 
 /**
- * 自动配置类 程序入口
+ * <p>>自动配置类 程序入口</p
  *
  * @author pwm
- * @date 2020/1/31
  */
 @Configuration
 // TODO 加载日志配置 转移地方
@@ -76,14 +76,14 @@ public class CmpClientAutoConfiguration {
         // 客户端名称
         String applicationName = getProperty("spring.application.name");
         // 客户端端口号
-        int port = Integer.valueOf(env.getProperty("server.port", env.getProperty("port", "8080")));
+        int port = Integer.parseInt(env.getProperty("server.port", env.getProperty("port", "8080")));
         InstanceInfo instanceInfo = new InstanceInfo();
         instanceInfo.setInstanceId(UUID.randomUUID().toString());
         instanceInfo.setIpAddr(ipAddress);
         instanceInfo.setServiceUrl(serviceUrl);
         instanceInfo.setPort(port);
         instanceInfo.setAppName(applicationName);
-        instanceInfo.setExpiredTime(Integer.valueOf(expiredTime));
+        instanceInfo.setExpiredTime(Integer.parseInt(expiredTime));
         logger.info(instanceInfo.toString());
         // 构造客户端信息
         return instanceInfo;
@@ -104,8 +104,8 @@ public class CmpClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(value = LogScannerTask.class, search = SearchStrategy.CURRENT)
-    public LogScannerTask logClient(RabbitTemplate rabbitTemplate){
-        return new LogScannerTask(rabbitTemplate,logConfigProperties);
+    public LogScannerTask logClient(@Qualifier(value = "cmpRabbitTemplate") RabbitTemplate rabbitTemplate,InstanceInfo instanceInfo){
+        return new LogScannerTask(rabbitTemplate,logConfigProperties,instanceInfo);
     }
 
     private String getProperty(String property) {

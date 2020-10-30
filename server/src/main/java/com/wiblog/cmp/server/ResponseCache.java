@@ -1,6 +1,6 @@
 package com.wiblog.cmp.server;
 
-import com.wiblog.cmp.server.bean.InstanceInfo;
+import com.wiblog.cmp.common.bean.InstanceInfo;
 import com.wiblog.cmp.server.bean.Lease;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,7 +9,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * 缓存
  *
  * @author pwm
- * @date 2020/4/25
  */
 public class ResponseCache {
 

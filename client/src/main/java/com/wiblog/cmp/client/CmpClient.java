@@ -2,11 +2,10 @@ package com.wiblog.cmp.client;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.wiblog.cmp.client.bean.InstanceInfo;
 import com.wiblog.cmp.client.config.CmpClientConfig;
+import com.wiblog.cmp.common.bean.InstanceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -14,9 +13,7 @@ import java.util.concurrent.*;
 
 /**
  * @author pwm
- * @date 2020/2/1
  */
-@Component
 public class CmpClient {
 
     private static final Logger log = LoggerFactory.getLogger(CmpClient.class);
@@ -67,6 +64,7 @@ public class CmpClient {
         if (register()) {
             // 注册成功
             log.info("注册成功");
+            this.instanceInfo.setState(true);
         }
 
         // 心跳维持
@@ -105,6 +103,9 @@ public class CmpClient {
         public void run() {
             if (renew()) {
                 log.info("心跳成功");
+                instanceInfo.setState(true);
+            }else{
+                instanceInfo.setState(false);
             }
         }
     }
@@ -121,7 +122,7 @@ public class CmpClient {
         try {
             response = restTemplate.postForObject(instanceInfo.getServiceUrl() + "register", instanceInfo, JSONObject.class);
         } catch (ResourceAccessException e){
-            log.error("服务端连接失败",e.getMessage());
+            log.error("连接注册中心失败-{}",e.getMessage());
         } catch (Exception e) {
             log.error("注册异常", e);
         }

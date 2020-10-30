@@ -2,14 +2,17 @@ package com.wiblog.cmp.client.log;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.wiblog.cmp.common.bean.InstanceInfo;
+import com.wiblog.cmp.common.constant.CmpConstant;
+import com.wiblog.cmp.common.logger.LogMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -19,11 +22,11 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * 日志文件夹监听
+ * <p>日志文件夹监听</p>
  * <p>
  * 扫描日志文件夹，每隔scanFrequency秒检查目录中日志文件的变化情况，有变化监听句柄才会重新启动，
  * ignoreOlder，将忽略在指定时间范围之前修改的任何文件
- * <p>
+ * </p>
  * 文件路径+文件名作为文件标识，inode是linux特有标识，windows下不可用
  *
  * @author pwm
@@ -63,14 +66,19 @@ public class LogScannerTask {
 
     private final RabbitTemplate rabbitTemplate;
 
+    private final InstanceInfo instanceInfo;
+
     /**
      * 正在监听文件的线程
      */
     public static final ConcurrentHashMap<String, Object> WATCHER = new ConcurrentHashMap<>();
 
-    public LogScannerTask(RabbitTemplate rabbitTemplate,LogConfigProperties properties) {
+    public LogScannerTask(RabbitTemplate rabbitTemplate, LogConfigProperties properties, InstanceInfo instanceInfo) {
         logger.info("初始化日志收集客户端");
         this.logDir = properties.getLogDir();
+        if (this.logDir == null) {
+            logger.error("[cmp.log.logDir]未指定日志文件夹");
+        }
 
         // 读取注册表文件
         this.sinceDb = SinceDbUtils.getSinceDb();
@@ -82,6 +90,7 @@ public class LogScannerTask {
 
         this.scannerFuture = this.scheduler.scheduleWithFixedDelay(new LogScannerRunnable(), 0, scanFrequency, TimeUnit.SECONDS);
         this.rabbitTemplate = rabbitTemplate;
+        this.instanceInfo = instanceInfo;
     }
 
     /**
@@ -96,8 +105,6 @@ public class LogScannerTask {
         }
 
         private void work() {
-            // TODO 心跳检测
-//            logger.info("开始监听日志文件夹");
             // 更新sinceDb内容
             SinceDbUtils.writeSinceDb(sinceDb);
             long nowTime = System.currentTimeMillis();
@@ -128,13 +135,13 @@ public class LogScannerTask {
                     String id = DigestUtils.md5DigestAsHex(path.getBytes());
                     long lastModifiedTime = file.lastModified();
                     // 超过一定时间文件没有更新 则关闭文件句柄
-                    if (lastModifiedTime + closeInactive <nowTime){
+                    if (lastModifiedTime + closeInactive < nowTime) {
                         // 超过时间范围的忽略
                         if (lastModifiedTime + ignoreOlder < nowTime) {
                             continue;
                         }
                         ScheduledFuture<?> future = (ScheduledFuture<?>) WATCHER.remove(id);
-                        if (future!=null){
+                        if (future != null) {
                             future.cancel(true);
                         }
                     }
@@ -210,7 +217,7 @@ public class LogScannerTask {
             List<LogMessage> list = getFileLog();
             if (list.size() > 0) {
                 list.forEach(e -> {
-                    rabbitTemplate.convertAndSend(RabbitmqConfig.EXCHANGE_KEY, RabbitmqConfig.ROUTING_KEY, JSONObject.toJSONString(e));
+                    rabbitTemplate.convertAndSend(CmpConstant.Logger.EXCHANGE_KEY, CmpConstant.Logger.ROUTING_KEY, JSONObject.toJSONString(e));
                 });
             }
         }
@@ -238,10 +245,10 @@ public class LogScannerTask {
                         String str = new String(tmp.getBytes(StandardCharsets.ISO_8859_1), Charset.forName(this.charset));
                         if (!StringUtils.isEmpty(str)) {
                             // 不是首行合并到上一行
-                            if (!FileUtils.isFirstLine(str) && list.size()>0){
-                                LogMessage logMessage = list.get(list.size()-1);
-                                logMessage.str(logMessage.getStr()+System.lineSeparator()+str);
-                            }else{
+                            if (!FileUtils.isFirstLine(str) && list.size() > 0) {
+                                LogMessage logMessage = list.get(list.size() - 1);
+                                logMessage.str(logMessage.getStr() + System.lineSeparator() + str);
+                            } else {
                                 LogMessage logMessage = buildMessage(str);
                                 list.add(logMessage);
                             }
@@ -263,7 +270,11 @@ public class LogScannerTask {
         }
     }
 
-    private LogMessage buildMessage(String str){
-        return LogMessage.builder().str(str).build();
+    private LogMessage buildMessage(String str) {
+        return LogMessage.builder()
+                .str(str)
+                .instanceId(this.instanceInfo.getInstanceId())
+                .appName(this.instanceInfo.getAppName())
+                .build();
     }
 }

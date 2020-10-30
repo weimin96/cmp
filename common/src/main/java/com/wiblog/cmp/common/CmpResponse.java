@@ -1,8 +1,7 @@
-package com.wiblog.cmp.client.bean;
+package com.wiblog.cmp.common;
 
 /**
  * @author pwm
- * @date 2020/8/30
  */
 public class CmpResponse {
 

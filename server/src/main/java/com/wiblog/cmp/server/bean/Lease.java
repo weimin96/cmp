@@ -2,7 +2,6 @@ package com.wiblog.cmp.server.bean;
 
 /**
  * @author pwm
- * @date 2020/3/1
  */
 public class Lease<T> {
 

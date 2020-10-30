@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * @author pwm
- * @date 2020/9/6
  */
 @SpringBootApplication
 public class ServerApplication {

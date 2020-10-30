@@ -7,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author pwm
- * @date 2020/8/30
  */
 @Component
 @ConfigurationProperties(CmpServerConfig.PREFIX)

@@ -8,13 +8,12 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 监管定时任务
- * 固定间隔的周期性任务，一旦遇到超时就会将下一个周期的间隔时间调大，
+ * <p>监管定时任务</p>
+ * <p>固定间隔的周期性任务，一旦遇到超时就会将下一个周期的间隔时间调大，
  * 如果连续超时，那么每次间隔时间都会增大一倍，一直到达外部参数设定的上限为止，
- * 一旦新任务不再超时，间隔时间又会自动恢复为初始值
+ * 一旦新任务不再超时，间隔时间又会自动恢复为初始值</p>
  *
  * @author pwm
- * @date 2020/2/10
  */
 public class CmpTimerTask extends TimerTask {
 

@@ -1,8 +1,8 @@
 package com.wiblog.cmp.server;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.wiblog.cmp.common.bean.InstanceInfo;
 import com.wiblog.cmp.server.bean.CmpServerConfig;
-import com.wiblog.cmp.server.bean.InstanceInfo;
 import com.wiblog.cmp.server.bean.Lease;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author pwm
- * @date 2020/4/25
  */
 @Component
 public class CmpServer {

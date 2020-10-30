@@ -14,7 +14,6 @@ import org.springframework.web.client.RestTemplate;
 
 /**
  * @author pwm
- * @date 2019/12/12
  */
 @Configuration
 public class HttpClientConfig {

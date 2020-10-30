@@ -12,7 +12,6 @@ import java.util.Date;
 
 /**
  * @author panweimin
- * @create 2020-10-29 17:04
  */
 @Document(indexName = "cmp_log",type = "cmp_log")
 public class EsLog implements Serializable {
@@ -25,14 +24,34 @@ public class EsLog implements Serializable {
 
     private String level;
 
+    private String clientId;
+
+    private String appName;
+
     @Field(type = FieldType.Long)
     private Long line;
 
-    @Field(type = FieldType.Date, format = DateFormat.custom,pattern ="yyyy-MM-dd HH:mm:ss")
-    @JsonFormat(shape =JsonFormat.Shape.STRING,pattern ="yyyy-MM-dd HH:mm:ss",timezone ="GMT+8")
-    private Date createTime;
+    @Field(type = FieldType.Date, format = DateFormat.custom,pattern ="yyyy-MM-dd HH:mm:ss.SSS")
+    @JsonFormat(shape =JsonFormat.Shape.STRING,pattern ="yyyy-MM-dd HH:mm:ss.SSS",timezone ="GMT+8")
+    private Date timestamp;
 
     public EsLog() {
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
 
     public String getId() {
@@ -67,11 +86,59 @@ public class EsLog implements Serializable {
         this.line = line;
     }
 
-    public Date getCreateTime() {
-        return createTime;
+    public Date getTimestamp() {
+        return timestamp;
     }
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
+    public void setTimestamp(Date timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public EsLog id(String id) {
+        this.id = id;
+        return this;
+    }
+
+    public EsLog msg(String msg) {
+        this.msg = msg;
+        return this;
+    }
+
+    public EsLog level(String level) {
+        this.level = level;
+        return this;
+    }
+
+    public EsLog clientId(String clientId) {
+        this.clientId = clientId;
+        return this;
+    }
+
+    public EsLog appName(String appName) {
+        this.appName = appName;
+        return this;
+    }
+
+    public EsLog line(Long line) {
+        this.line = line;
+        return this;
+    }
+
+    public EsLog timestamp(Date timestamp) {
+        this.timestamp = timestamp;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return "EsLog{" +
+                "id='" + id + '\'' +
+                ", msg='" + msg + '\'' +
+                ", level='" + level + '\'' +
+                ", clientId='" + clientId + '\'' +
+                ", appName='" + appName + '\'' +
+                ", line=" + line +
+                ", timestamp=" + timestamp +
+                '}';
     }
 }

@@ -1,12 +1,13 @@
 package com.wiblog.cmp.server.util;
 
+import org.springframework.util.StringUtils;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
  * @author panweimin
- * @create 2020-10-29 19:52
  */
 public class DateUtils {
 
@@ -27,6 +28,9 @@ public class DateUtils {
     }
 
     public static Date parse(String strDate) {
+        if (StringUtils.isEmpty(strDate)){
+            return null;
+        }
         try {
             return getDateFormat().parse(strDate);
         } catch (ParseException e) {

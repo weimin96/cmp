@@ -1,8 +1,8 @@
 package com.wiblog.cmp.server.controller;
 
+import com.wiblog.cmp.common.CmpResponse;
+import com.wiblog.cmp.common.bean.InstanceInfo;
 import com.wiblog.cmp.server.ResponseCache;
-import com.wiblog.cmp.server.bean.CmpResponse;
-import com.wiblog.cmp.server.bean.InstanceInfo;
 import com.wiblog.cmp.server.bean.Lease;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author pwm
- * @date 2020/2/26
  */
 @RestController
 @RequestMapping("/cmp")
@@ -80,7 +79,7 @@ public class CmpController {
         if (isBlank(name)){
             return CmpResponse.status(400).entity("Missing App Name").build();
         }
-        Lease lease = registry.get(name);
+        Lease<?> lease = registry.get(name);
         // 之前没有
         if (lease == null){
             // 客户端重新请求注册
