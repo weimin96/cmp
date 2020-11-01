@@ -12,6 +12,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -23,16 +24,23 @@ public class LogListener {
     @Autowired
     private EsLogRepository esLogRepository;
 
+//    @RabbitHandler
+//    public void process(String jsonContent) {
+//        LogMessage logMessage = JSONObject.parseObject(jsonContent, LogMessage.class);
+//        Map<String, Object> resultMap = GrokUtil.toLogMap(logMessage.getStr());
+//        // TODO 入库
+//
+//        EsLog esLog = (EsLog) MapUtils.mapToObject(resultMap, EsLog.class);
+//        esLog.timestamp(DateUtils.parse((String) resultMap.get("timestamp")))
+//        .appName(logMessage.getAppName())
+//        .clientId(logMessage.getInstanceId());
+//        System.out.println("日志-》" + esLog);
+//
+//        esLogRepository.save(esLog);
+//    }
+
     @RabbitHandler
-    public void process(String jsonContent) {
-        LogMessage logMessage = JSONObject.parseObject(jsonContent, LogMessage.class);
-        Map<String, Object> resultMap = GrokUtil.toLogMap(logMessage.getStr());
-        // TODO 入库
-
-        EsLog esLog = (EsLog) MapUtils.mapToObject(resultMap, EsLog.class);
-        esLog.timestamp(DateUtils.parse((String) resultMap.get("timestamp")));
-        System.out.println("日志-》" + logMessage);
-
-        esLogRepository.save(esLog);
+    public void onMessageBatch(List<String> contentList){
+        System.out.println(contentList);
     }
 }

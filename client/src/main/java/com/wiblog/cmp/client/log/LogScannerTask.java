@@ -82,7 +82,6 @@ public class LogScannerTask {
 
         // 读取注册表文件
         this.sinceDb = SinceDbUtils.getSinceDb();
-
         ThreadFactory threadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("cmp-log-pool-%d")
                 .setDaemon(true).build();
