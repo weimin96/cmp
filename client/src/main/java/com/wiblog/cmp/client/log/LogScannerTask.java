@@ -7,6 +7,9 @@ import com.wiblog.cmp.common.constant.CmpConstant;
 import com.wiblog.cmp.common.logger.LogMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.DigestUtils;
@@ -64,7 +67,7 @@ public class LogScannerTask {
 
     private final LinkedHashMap<String, String> sinceDb;
 
-    private final RabbitTemplate rabbitTemplate;
+    private final BatchingRabbitTemplate rabbitTemplate;
 
     private final InstanceInfo instanceInfo;
 
@@ -73,7 +76,7 @@ public class LogScannerTask {
      */
     public static final ConcurrentHashMap<String, Object> WATCHER = new ConcurrentHashMap<>();
 
-    public LogScannerTask(RabbitTemplate rabbitTemplate, LogConfigProperties properties, InstanceInfo instanceInfo) {
+    public LogScannerTask(BatchingRabbitTemplate rabbitTemplate, LogConfigProperties properties, InstanceInfo instanceInfo) {
         logger.info("初始化日志收集客户端");
         this.logDir = properties.getLogDir();
         if (this.logDir == null) {
@@ -214,10 +217,11 @@ public class LogScannerTask {
         private void work() throws Exception {
             logger.info("开始日志收集");
             List<LogMessage> list = getFileLog();
-            if (list.size() > 0) {
-                list.forEach(e -> {
-                    rabbitTemplate.convertAndSend(CmpConstant.Logger.EXCHANGE_KEY, CmpConstant.Logger.ROUTING_KEY, JSONObject.toJSONString(e));
-                });
+            MessageProperties messageProperties = new MessageProperties();
+            Message message;
+            for (LogMessage e:list){
+                message=new Message(JSONObject.toJSONString(e).getBytes(), messageProperties);
+                rabbitTemplate.send(CmpConstant.Logger.EXCHANGE_KEY, CmpConstant.Logger.ROUTING_KEY, message);
             }
         }
 

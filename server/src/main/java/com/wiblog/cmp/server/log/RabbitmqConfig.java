@@ -5,6 +5,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -17,13 +18,18 @@ import org.springframework.stereotype.Component;
 @Configuration
 public class RabbitmqConfig {
 
+    /**
+     * 一次批量的数量
+     */
+    private static final int BATCH_SIZE = 100;
+
     @Autowired
     RabbitAdmin rabbitAdmin;
 
-    @Bean
+    /*@Bean
     public RabbitTemplate cmpRabbitTemplate(CachingConnectionFactory factory){
         return new RabbitTemplate(factory);
-    }
+    }*/
 
     /**
      * 创建日志消息队列
@@ -64,5 +70,18 @@ public class RabbitmqConfig {
     public void createCmpExchangeQueue() {
         rabbitAdmin.declareExchange(cmpLogExchange());
         rabbitAdmin.declareQueue(cmpLogQueue());
+    }
+
+    @Bean("batchQueueRabbitListenerContainerFactory")
+    public SimpleRabbitListenerContainerFactory batchQueueRabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
+        SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        //设置批量
+        factory.setBatchListener(true);
+        //设置BatchMessageListener生效
+        factory.setConsumerBatchEnabled(true);
+        //设置监听器一次批量处理的消息数量
+        factory.setBatchSize(BATCH_SIZE);
+        return factory;
     }
 }

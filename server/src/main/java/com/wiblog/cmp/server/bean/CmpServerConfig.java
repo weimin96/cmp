@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 /**
  * @author pwm
  */
-@Component
+//@Component
 @ConfigurationProperties(CmpServerConfig.PREFIX)
 public class CmpServerConfig {
 

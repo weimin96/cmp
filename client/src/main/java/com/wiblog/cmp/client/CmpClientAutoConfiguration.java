@@ -8,6 +8,7 @@ import com.wiblog.cmp.client.log.RabbitmqConfig;
 import com.wiblog.cmp.common.bean.InstanceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.BatchingRabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -104,7 +105,7 @@ public class CmpClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(value = LogScannerTask.class, search = SearchStrategy.CURRENT)
-    public LogScannerTask logClient(@Qualifier(value = "cmpRabbitTemplate") RabbitTemplate rabbitTemplate,InstanceInfo instanceInfo){
+    public LogScannerTask logClient(@Qualifier(value = "cmpBatchingRabbitTemplate") BatchingRabbitTemplate rabbitTemplate, InstanceInfo instanceInfo){
         return new LogScannerTask(rabbitTemplate,logConfigProperties,instanceInfo);
     }
 
