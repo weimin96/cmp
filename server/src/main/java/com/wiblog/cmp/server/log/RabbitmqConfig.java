@@ -72,7 +72,7 @@ public class RabbitmqConfig {
         rabbitAdmin.declareQueue(cmpLogQueue());
     }
 
-    @Bean("batchQueueRabbitListenerContainerFactory")
+    /*@Bean("batchQueueRabbitListenerContainerFactory")
     public SimpleRabbitListenerContainerFactory batchQueueRabbitListenerContainerFactory(ConnectionFactory connectionFactory) {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
@@ -83,5 +83,5 @@ public class RabbitmqConfig {
         //设置监听器一次批量处理的消息数量
         factory.setBatchSize(BATCH_SIZE);
         return factory;
-    }
+    }*/
 }
